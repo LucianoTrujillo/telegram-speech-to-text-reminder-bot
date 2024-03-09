@@ -20,6 +20,15 @@ const openai = new OpenAI({
 const token = process.env.TELEGRAM_TOKEN;
 const bot = new TelegramBot(token, {polling: true});
 
+const whiteListedUsers = process.env.WHITELISTED_USERS.split(',');
+
+const validateUserIsWhitelisted = (chatId) => {
+    if (!whiteListedUsers.includes(chatId.toString())){
+        console.log(`${chatId} is not whitelisted: whitelist is: ${whiteListedUsers}`);
+        throw new Error('User not whitelisted. Contact developer (luckytrujillo123@gmail.com) for enabling usage');
+    }
+}
+
 const handleReminder = async (msg, chatId) => {
     console.log(`[${chatId}]: processing message: ${msg}`);
 
@@ -109,21 +118,31 @@ const handleReminder = async (msg, chatId) => {
 }
 
 bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
+    try {
 
-
+        const chatId = msg.chat.id;
+        
   const message = msg.text;
 
   if(!msg.voice?.duration){
     console.log(`[${chatId}]: new message: ${msg.text}`);
+    validateUserIsWhitelisted(chatId);
 
       handleReminder(message, chatId);
 
-  }
+    }
+    }
+    catch (e){
+        console.error(`[${msg.chat.id}]: ${e.message}`);
+        bot.sendMessage(msg.chat.id, e.message);
+    }   
 });
 
 bot.on("voice", async (msg) => {
+    try {
+
   const chatId = msg.chat.id;
+    validateUserIsWhitelisted(chatId);
   console.log(`[${chatId}]: new voice message`);
 
   const fileInfoResponse = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${msg.voice.file_id}`);
@@ -141,6 +160,10 @@ bot.on("voice", async (msg) => {
   console.log(transcription.text);
 
     handleReminder(transcription.text, chatId);
+} catch (e){
+    console.error(`[${msg.chat.id}]: ${e.message}`);
+    bot.sendMessage(msg.chat.id, e.message);
+}
 });
 
 app.get('/', (req, res) => {
