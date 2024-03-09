@@ -21,6 +21,8 @@ const token = process.env.TELEGRAM_TOKEN;
 const bot = new TelegramBot(token, {polling: true});
 
 const handleReminder = async (msg, chatId) => {
+    console.log(`[${chatId}]: processing message: ${msg}`);
+
     const parsedMessage = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         response_format: {"type": "json_object"},
@@ -36,18 +38,16 @@ const handleReminder = async (msg, chatId) => {
         ]
       });
     
-    
-        // we parse the response to JSON:
-        const responseAsJSON = JSON.parse(parsedMessage.choices[0].message.content);
-    
+      
+      const responseAsJSON = JSON.parse(parsedMessage.choices[0].message.content);
+      
+      console.log(`[${chatId}]: parsed message: ${JSON.stringify(responseAsJSON)}`);
+
         const reminderTime = responseAsJSON.time;
         const reminderText = responseAsJSON.text;
     
-        console.log(responseAsJSON.time)
     
-        const newDate = new Date();
-        const isoString = newDate.toISOString();
-        
+        const newDate = new Date();        
     
         const parsedTime = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
@@ -78,7 +78,8 @@ const handleReminder = async (msg, chatId) => {
         const responseAsJSON2 = JSON.parse(parsedTime.choices[0].message.content);
     
     
-        console.log(responseAsJSON2);
+        console.log(`[${chatId}]: parsed time: ${JSON.stringify(responseAsJSON2)}`);
+
     
         const reminderDateTime = responseAsJSON2.time;
         const reminderTimezone = responseAsJSON2.timezone;
@@ -93,13 +94,15 @@ const handleReminder = async (msg, chatId) => {
             timezone: reminderTimezone
         });
 
-        console.log(parsedDate);
+        console.log(`[${chatId}]: parsed date: ${parsedDate}`);
+
     
         const currentTime = new Date().getTime();
         const reminderDateTimeObject = parsedDate.getTime();
         const timeToReminder = reminderDateTimeObject - currentTime;
     
         setTimeout(() => {
+            console.log(`[${chatId}]: sending reminder: ${reminderText}`);
             bot.sendMessage(chatId, `Reminder: ${reminderText}`);
         }, timeToReminder);
     
@@ -108,12 +111,11 @@ const handleReminder = async (msg, chatId) => {
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
 
-  // we process the message that we received into a JSON object with the reminder's text and time.
-  // we send the user that a reminder has been set with name and time.
 
   const message = msg.text;
 
   if(!msg.voice?.duration){
+    console.log(`[${chatId}]: new message: ${msg.text}`);
 
       handleReminder(message, chatId);
 
@@ -122,6 +124,7 @@ bot.on('message', async (msg) => {
 
 bot.on("voice", async (msg) => {
   const chatId = msg.chat.id;
+  console.log(`[${chatId}]: new voice message`);
 
   const fileInfoResponse = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${msg.voice.file_id}`);
   const fileInfo = await fileInfoResponse.json();
