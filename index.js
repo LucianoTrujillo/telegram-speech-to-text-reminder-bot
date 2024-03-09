@@ -4,6 +4,7 @@ require('dotenv').config();
 const express = require('express');
 
 const TelegramBot = require('node-telegram-bot-api');
+const chrono = require('chrono-node');
 const OpenAI = require('openai');
 
 const app = express();
@@ -54,13 +55,22 @@ const handleReminder = async (msg, chatId) => {
             messages: [
                 {
                 role: "system",
-                content: `You are a reminder time parser that converts a natural lnaguage reminder's date time into an actual date time.
-                 For example: if current date is: "2024-03-08T00:39:42.787Z", mañana a las 8am would result in the following JSON: {"time": "2022-03-09T08:00:00.000Z"}
-                 Another example: if current date is: "2024-05-15T16:39:42.787Z", pasado mañana a las 10pm would result in the following JSON: {"time": "2022-05-17T22:00:00.000Z"}`
-                },
+                content: `You are a reminder time parser that converts a natural lnaguage reminder's date time into a valid chrono-node input for parsing time.
+                These are all valid inputs, but the parser is really versatile:
+                Today, Tomorrow, Yesterday, Last Friday, etc
+                17 August 2013 - 19 August 2013
+                This Friday from 13:00 - 16.00
+                5 days ago
+                2 weeks from now
+                Sat Aug 17 2013 18:40:39 GMT+0900 (JST)
+                2014-11-30T08:15:30-05:30
+
+                However, an extremely important thing to note is that it only accepts english input, so if the user's input was in other language, translate it to english for chrono-node to understand it.
+                Expected JSON output: {"time": "input for chrono-node to parse time. For example: tomorrow at 8am.", "timezone": "timezone of the user. For example: GMT-3.}
+                ` },
                 {
                 role: "user",
-                content: "current date:" + isoString + ". Reminder time: " + reminderTime
+                content: "current date:" + newDate.toString() + ". Reminder time: " + reminderTime
                 }
             ]
             });
@@ -71,13 +81,22 @@ const handleReminder = async (msg, chatId) => {
         console.log(responseAsJSON2);
     
         const reminderDateTime = responseAsJSON2.time;
+        const reminderTimezone = responseAsJSON2.timezone;
     
-        bot.sendMessage(chatId, `Reminder set for: ${reminderDateTime} with text: ${reminderText}`);
+        bot.sendMessage(chatId, `Reminder set for: ${reminderDateTime} timezone: ${reminderTimezone} and text: ${reminderText}`);
     
         // we set a timeout to send the user a message when the reminder is due.
+
+        const parsedDate = chrono.parseDate(reminderDateTime, {
+            instant: newDate,
+            forwardDate: true,
+            timezone: reminderTimezone
+        });
+
+        console.log(parsedDate);
     
         const currentTime = new Date().getTime();
-        const reminderDateTimeObject = new Date(reminderDateTime).getTime();
+        const reminderDateTimeObject = parsedDate.getTime();
         const timeToReminder = reminderDateTimeObject - currentTime;
     
         setTimeout(() => {
