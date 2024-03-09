@@ -1,0 +1,16 @@
+{
+  "name": "telegram-speech-to-text-reminder-bot",
+  "version": "1.0.0",
+  "description": "Uses openAI's APIs to process inputs from user",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-telegram-bot-api": "^0.64.0",
+    "openai": "^4.28.4"
+  }
+}
