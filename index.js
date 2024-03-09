@@ -1,9 +1,15 @@
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+const express = require('express');
 
 const TelegramBot = require('node-telegram-bot-api');
 const OpenAI = require('openai');
+
+const app = express();
+
+// Middleware to parse JSON bodies
+app.use(express.json());
 
 
 const openai = new OpenAI({
@@ -114,3 +120,12 @@ bot.on("voice", async (msg) => {
 
     handleReminder(transcription.text, chatId);
 });
+
+app.get('/', (req, res) => {
+    res.send('Hello World! The server is running and listening for requests.');
+  });
+  
+  // Make the server listen on port 3000
+  app.listen(3000, () => {
+    console.log('Server is running on http://localhost:3000');
+  });
