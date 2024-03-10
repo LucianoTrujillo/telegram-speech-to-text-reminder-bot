@@ -100,7 +100,7 @@ const handleReminder = async (msg, chatId) => {
         const parsedDate = chrono.parseDate(reminderDateTime, {
             instant: newDate,
             forwardDate: true,
-            timezone: reminderTimezone
+            timezone: -180
         });
 
         console.log(`[${chatId}]: parsed date: ${parsedDate}`);
@@ -108,8 +108,11 @@ const handleReminder = async (msg, chatId) => {
     
         const currentTime = new Date().getTime();
         const reminderDateTimeObject = parsedDate.getTime();
+
         const timeToReminder = reminderDateTimeObject - currentTime;
-    
+        
+        console.log(`[${chatId}]: current time: ${currentTime}, reminder time: ${reminderDateTimeObject}, time to reminder: ${timeToReminder / 1000 / 60} minutes`);
+
         setTimeout(() => {
             console.log(`[${chatId}]: sending reminder: ${reminderText}`);
             bot.sendMessage(chatId, `Reminder: ${reminderText}`);
