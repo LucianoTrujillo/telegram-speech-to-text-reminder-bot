@@ -93,15 +93,16 @@ const handleReminder = async (msg, chatId) => {
         const reminderDateTime = responseAsJSON2.time;
         const reminderTimezone = responseAsJSON2.timezone;
     
-        bot.sendMessage(chatId, `Reminder set for: ${reminderDateTime} timezone: ${reminderTimezone} and text: ${reminderText}`);
-    
+        
         // we set a timeout to send the user a message when the reminder is due.
-
+        
         const parsedDate = chrono.parseDate(reminderDateTime, {
-            instant: newDate,
-            forwardDate: true,
-            timezone: -180
+          instant: newDate,
+          forwardDate: true,
+          timezone: -180
         });
+
+        bot.sendMessage(chatId, `Reminder: ${reminderText} \n Time: ${parsedDate}`);
 
         console.log(`[${chatId}]: parsed date: ${parsedDate}`);
 
@@ -113,7 +114,7 @@ const handleReminder = async (msg, chatId) => {
         
         console.log(`[${chatId}]: current time: ${currentTime}, reminder time: ${reminderDateTimeObject}, time to reminder: ${timeToReminder / 1000 / 60} minutes`);
 
-        setTimeout(() => {
+        setTimeoutUnlimitedDelay(() => {
             console.log(`[${chatId}]: sending reminder: ${reminderText}`);
             bot.sendMessage(chatId, `Reminder: ${reminderText}`);
         }, timeToReminder);
@@ -168,6 +169,26 @@ bot.on("voice", async (msg) => {
     bot.sendMessage(msg.chat.id, e.message);
 }
 });
+
+
+function setTimeoutUnlimitedDelay(fn, delay) {
+  // Calculate the maximum delay allowed by setTimeout
+  var maxDelay = Math.pow(2, 31) - 1;
+
+  if (delay > maxDelay) {
+      // If the delay exceeds the maximum, schedule the first part now
+      // and the remainder after the maxDelay has elapsed
+      setTimeout(function() {
+          // Calculate the remaining delay and call setTimeout_ recursively
+          var remainingDelay = delay - maxDelay;
+          setTimeout_(fn, remainingDelay);
+      }, maxDelay);
+  } else {
+      // If the delay is within the allowable range, use the native setTimeout
+      setTimeout(fn, delay);
+  }
+}
+
 
 app.get('/', (req, res) => {
     res.send('Hello World! The server is running and listening for requests.');
